@@ -69,6 +69,35 @@ func GetResenaByID(c *gin.Context) {
 	c.JSON(http.StatusOK, r)
 }
 
+// CreateResena crea una nueva reseña
+func CreateResena(c *gin.Context) {
+	var r models.ResenaGimnasio
+	if err := c.ShouldBindJSON(&r); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validar calificación entre 1 y 5
+	if r.Calificacion < 1 || r.Calificacion > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La calificación debe ser entre 1 y 5"})
+		return
+	}
+
+	query := `
+		INSERT INTO gimnasios.resenas_gimnasio (gimnasio_id, usuario_id, calificacion, comentario, activo)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+	var id int
+	err := config.DB.QueryRow(query, r.GimnasioID, r.UsuarioID, r.Calificacion, r.Comentario, r.Activo).Scan(&id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	r.ID = id
+	c.JSON(http.StatusCreated, r)
+}
+
 // UpdateResena actualiza una reseña existente
 func UpdateResena(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
