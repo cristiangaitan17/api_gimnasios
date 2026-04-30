@@ -38,3 +38,33 @@ func GetResenas(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, resenas)
 }
+
+// GetResenaByID obtiene una reseña por ID
+func GetResenaByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	var r models.ResenaGimnasio
+	row := config.DB.QueryRow(`
+		SELECT id, gimnasio_id, usuario_id, calificacion, 
+		       COALESCE(comentario, ''), activo
+		FROM gimnasios.resenas_gimnasio WHERE id = $1
+	`, id)
+
+	err = row.Scan(
+		&r.ID, &r.GimnasioID, &r.UsuarioID, &r.Calificacion,
+		&r.Comentario, &r.Activo,
+	)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Reseña no encontrada"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, r)
+}
