@@ -1,4 +1,4 @@
-module github.com/cristiangaitan17/api-gimnasios
+module github.com/cristiangaitan17/api_gimnasios
 
 go 1.26.2
 
