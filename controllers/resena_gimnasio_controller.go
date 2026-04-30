@@ -138,3 +138,24 @@ func UpdateResena(c *gin.Context) {
 	r.ID = id
 	c.JSON(http.StatusOK, r)
 }
+
+// DeleteResena elimina una reseña
+func DeleteResena(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	result, err := config.DB.Exec("DELETE FROM gimnasios.resenas_gimnasio WHERE id = $1", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Reseña no encontrada"})
+		return
+	}
+	c.JSON(http.StatusNoContent, nil)
+}
