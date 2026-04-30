@@ -68,3 +68,44 @@ func GetResenaByID(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, r)
 }
+
+// UpdateResena actualiza una reseña existente
+func UpdateResena(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
+		return
+	}
+
+	var r models.ResenaGimnasio
+	if err := c.ShouldBindJSON(&r); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validar calificación entre 1 y 5
+	if r.Calificacion < 1 || r.Calificacion > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La calificación debe ser entre 1 y 5"})
+		return
+	}
+
+	query := `
+		UPDATE gimnasios.resenas_gimnasio 
+		SET gimnasio_id = $1, usuario_id = $2, calificacion = $3, 
+		    comentario = $4, activo = $5
+		WHERE id = $6
+	`
+	result, err := config.DB.Exec(query, r.GimnasioID, r.UsuarioID, r.Calificacion,
+		r.Comentario, r.Activo, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Reseña no encontrada"})
+		return
+	}
+	r.ID = id
+	c.JSON(http.StatusOK, r)
+}
